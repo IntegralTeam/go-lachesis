@@ -42,8 +42,8 @@ RUN printf "#!/bin/bash \n\
 mkdir -p /snapshots/uploads && touch /snapshots/latest.snapshot \n\
 while [ -f /docker-entrypoint.d/mainnet.toml ] \n\
 do \n\
-    previous_epoch=$(ls -1 /snapshots/*.epoch 2>/dev/null 1>&2 && echo $(basename $(ls -1 /snapshots/*.epoch | sort -r | head -n 1)) || echo 0.epoch) \n\
-    previous_epoch=${previous_epoch%.epoch} \n\
+    previous_epoch=\$(ls -1 /snapshots/*.epoch 2>/dev/null 1>&2 && echo \$(basename \$(ls -1 /snapshots/*.epoch | sort -r | head -n 1)) || echo 0.epoch) \n\
+    previous_epoch=\${previous_epoch%%.epoch} \n\
     lachesis --nousb --config /docker-entrypoint.d/mainnet.toml & \n\
     pid=\$! \n\
     sleep 13 \n\
@@ -62,3 +62,24 @@ done \n\
 
 EXPOSE 5050 18545 18546 18547 19090 80
 
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome fantom snapshots</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to fantom snapshots</h1>
+<p>Download the latest snapshot file
+<a href="/lachesis.snapshot">lachesis.snapshot</a>.<br/>
+<p><em>Then import snapshot by command &ldquo;lachesis import lachesis.snapshot&rdquo;</em></p>
+</body>
+</html>
