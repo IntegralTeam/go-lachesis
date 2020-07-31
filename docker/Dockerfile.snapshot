@@ -11,17 +11,17 @@ RUN export GIT_COMMIT=$(git rev-list -1 HEAD) && \
     go build -ldflags "$LD_FLAGS" -o /tmp/lachesis ./cmd/lachesis
 
 FROM nginx:latest
-ENV TIME_TO_SNAPSHOT=4:00
 COPY --from=lachesis /tmp/lachesis /usr/bin
 RUN apt update && apt install -y musl
-RUN sed -i 's/set -e/set -e\nbash \/docker-entrypoint.d\/scheduler.sh \&/' /docker-entrypoint.sh
+RUN sed -i 's/set -e/set -e\nnohup bash \/docker-entrypoint.d\/scheduler.sh \&/' /docker-entrypoint.sh
 RUN ln -s /lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so
 RUN ln -s /lib/libc.musl-x86_64.so /lib/libc.musl-x86_64.so.1
+RUN ln -s /snapshots/uploads/lachesis.snapshot /usr/share/nginx/html/lachesis.snapshot
 RUN curl https://raw.githubusercontent.com/Fantom-foundation/lachesis_launch/master/releases/v0.6.0/mainnet.toml > /docker-entrypoint.d/mainnet.toml
 RUN printf "<!DOCTYPE html>\
 <html>\
 <head>\
-<title>Welcome to nginx!</title>\
+<title>Welcome fantom snapshots</title>\
 <style>\
     body {\
         width: 35em;\
@@ -31,33 +31,34 @@ RUN printf "<!DOCTYPE html>\
 </style>\
 </head>\
 <body>\
-<h1>Welcome to nginx! Ha-Ha</h1>\
-<p>If you see this page, the nginx web server is successfully installed and\
-working. Further configuration is required.</p>\
-<p>For online documentation and support please refer to\
-<a href="http://localhost/latest.epoch">latest.epoch</a>.<br/>\
-Commercial support is available at\
-<a href="http://nginx.com/">nginx.com</a>.</p>\
-<p><em>Thank you for using nginx.</em></p>\
+<h1>Welcome to fantom snapshots</h1>\
+<p>Download the latest snapshot file\
+<a href="/lachesis.snapshot">lachesis.snapshot</a>.<br/>\
+<p><em>Then import snapshot by command &ldquo;lachesis import lachesis.snapshot&rdquo;</em></p>\
 </body>\
 </html>" > /usr/share/nginx/index.html
 RUN printf "#!/bin/bash \n\
 \n\
+mkdir -p /snapshots/uploads && touch /snapshots/latest.snapshot \n\
 while [ -f /docker-entrypoint.d/mainnet.toml ] \n\
 do \n\
+    previous_epoch=$(ls -1 /snapshots/*.epoch 2>/dev/null 1>&2 && echo $(basename $(ls -1 /snapshots/*.epoch | sort -r | head -n 1)) || echo 0.epoch) \n\
+    previous_epoch=${previous_epoch%.epoch} \n\
     lachesis --nousb --config /docker-entrypoint.d/mainnet.toml & \n\
     pid=\$! \n\
-    sleep 333 \n\
-    while [ \$(( \$(date --date='${TIME_TO_SNAPSHOT}' +%s) - \$(stat -c %%Y /snapshots/latest.epoch) )) -lt 43200 ] \n\
+    sleep 13 \n\
+    while [ \$(( \$(date +%%s) - \$(stat -c %%Y /snapshots/latest.snapshot) )) -lt 43 ] \n\
     do \n\
-        sleep 60 \n\
+        sleep 6 \n\
     done \n\
+    current_epoch=\$(lachesis attach --exec='ftm.currentEpoch()') \n\
     kill \$pid && wait \$pid \n\
-    lachesis export /snapshots/latest.epoch \n\
+    lachesis export /snapshots/latest.snapshot \$last_epoch \$current_epoch \n\
+    unlink /snapshots/\$previous_epoch.epoch \n\
+    ln -s /snapshots/latest.snapshot /snapshots/\$current_epoch.epoch \n\
+    cat /snapshots/latest.snapshot >> /snapshots/uploads/lachesis.snapshot \n\
 done \n\
 " > /docker-entrypoint.d/scheduler.sh
-RUN cat /docker-entrypoint.d/scheduler.sh
-RUN cat /docker-entrypoint.sh
 
 EXPOSE 5050 18545 18546 18547 19090 80
 
