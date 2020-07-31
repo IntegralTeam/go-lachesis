@@ -32,13 +32,13 @@ RUN printf "<!DOCTYPE html>\
 </head>\
 <body>\
 <h1>Welcome to fantom snapshots</h1>\
-<p>Download the latest snapshot file\
-<a href="/lachesis.snapshot">lachesis.snapshot</a>.<br/>\
+<p>Download the latest snapshot file&nbsp;<a href="/lachesis.snapshot">lachesis.snapshot</a>.</p>\
 <p><em>Then import snapshot by command &ldquo;lachesis import lachesis.snapshot&rdquo;</em></p>\
 </body>\
-</html>" > /usr/share/nginx/index.html
+</html>" > /docker-entrypoint.d/index.html 
 RUN printf "#!/bin/bash \n\
 \n\
+mv /docker-entrypoint.d/index.html /usr/share/nginx/html/index.html \n\
 mkdir -p /snapshots/uploads && touch /snapshots/latest.snapshot \n\
 while [ -f /docker-entrypoint.d/mainnet.toml ] \n\
 do \n\
@@ -46,8 +46,8 @@ do \n\
     previous_epoch=\${previous_epoch%%.epoch} \n\
     lachesis --nousb --config /docker-entrypoint.d/mainnet.toml & \n\
     pid=\$! \n\
-    sleep 13 \n\
-    while [ \$(( \$(date +%%s) - \$(stat -c %%Y /snapshots/latest.snapshot) )) -lt 43 ] \n\
+    sleep 333 \n\
+    while [ \$(( \$(date +%%s) - \$(stat -c %%Y /snapshots/latest.snapshot) )) -lt 4321 ] \n\
     do \n\
         sleep 6 \n\
     done \n\
@@ -56,30 +56,10 @@ do \n\
     lachesis export /snapshots/latest.snapshot \$last_epoch \$current_epoch \n\
     unlink /snapshots/\$previous_epoch.epoch \n\
     ln -s /snapshots/latest.snapshot /snapshots/\$current_epoch.epoch \n\
-    cat /snapshots/latest.snapshot >> /snapshots/uploads/lachesis.snapshot \n\
+    cp /snapshots/uploads/lachesis.snapshot /snapshots/tmp.snapshot \n\
+    cat /snapshots/latest.snapshot >> /snapshots/tmp.snapshot \n\
+    mv /snapshots/tmp.snapshot /snapshots/uploads/lachesis.snapshot \n\
 done \n\
 " > /docker-entrypoint.d/scheduler.sh
 
 EXPOSE 5050 18545 18546 18547 19090 80
-
-
-
-<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome fantom snapshots</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-</head>
-<body>
-<h1>Welcome to fantom snapshots</h1>
-<p>Download the latest snapshot file
-<a href="/lachesis.snapshot">lachesis.snapshot</a>.<br/>
-<p><em>Then import snapshot by command &ldquo;lachesis import lachesis.snapshot&rdquo;</em></p>
-</body>
-</html>
