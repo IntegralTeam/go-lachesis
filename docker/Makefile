@@ -10,6 +10,13 @@ lachesis: test_accs.json
 	    --build-arg GOPROXY=$(GOPROXY) \
 	    -f docker/Dockerfile.lachesis -t "lachesis:$(TAG)" .
 
+.PHONY: snapshot
+snapshot:
+	cd ../ && \
+	docker build \
+	    --network=host \
+	    --build-arg GOPROXY=$(GOPROXY) \
+	    -f docker/Dockerfile.snapshot -t "snapshot-lachesis:$(TAG)" .
 
 .PHONY: tx-storm
 tx-storm:
