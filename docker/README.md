@@ -157,3 +157,9 @@ For run grafana (after run `prometheus`):
 *Q: I get the following error `./_sentry.sh: line 3: declare: -l: invalid option`*
 
 A: Try upgrading to the latest version of bash on your machine. If you are on Mac OSX, you can follow this guide [here](https://itnext.io/upgrading-bash-on-macos-7138bd1066ba).
+
+
+## Run the snapshot service
+
+`docker run -d -p 80 --name snapshot-lachesis snapshot-lachesis`
+
